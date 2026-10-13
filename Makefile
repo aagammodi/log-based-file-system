@@ -5,7 +5,7 @@ CPPFLAGS = -Iinclude
 CFLAGS = -std=c11 -O2 -Wall -Wextra -Wpedantic
 LDFLAGS =
 
-.PHONY: all clean test-task-a test-crc
+.PHONY: all clean test-task-a test-crc test-cache test-segment-buffer
 
 all: mkfs.logfs
 
@@ -19,7 +19,7 @@ test-task-a: mkfs.logfs tests/test_task_a
 	./mkfs.logfs
 	./tests/test_task_a
 
-src/%.o: src/%.c include/logfs.h
+src/%.o: src/%.c include/logfs.h include/cache.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 tests/test_crc_failure: tests/test_crc_failure.c src/crc32.o
@@ -29,8 +29,21 @@ test-crc: mkfs.logfs tests/test_crc_failure
 	./mkfs.logfs
 	./tests/test_crc_failure
 
+tests/test_cache: tests/test_cache.c src/cache.o
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+test-cache: tests/test_cache
+	./tests/test_cache
+
+tests/test_segment_buffer: tests/test_segment_buffer.c src/segment_buffer.o src/disk.o src/crc32.o
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+test-segment-buffer: mkfs.logfs tests/test_segment_buffer
+	./mkfs.logfs
+	./tests/test_segment_buffer
+
 clean:
-	rm -f src/*.o mkfs.logfs tests/test_task_a tests/test_crc
+	rm -f src/*.o mkfs.logfs tests/test_task_a tests/test_crc_failure tests/test_cache tests/test_segment_buffer
 
 
 
